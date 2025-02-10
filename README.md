@@ -1,0 +1,31 @@
+# ATRA - A True Random Bot
+
+ATRA (Atmospheric Randomness) is a Discord dice bot that uses true randomness to generate values. The bot utilizes the [Random.org](https://www.random.org) API to produce these values. If you have doubts about its true randomness, I recommend checking [this page](https://www.random.org/randomness/) on the Random.org website.
+
+# Features
+
+- A dice bot completly random.
+- Statistics about the session.
+- The bot's code is structured for scalability.
+
+# Instalation
+
+First you'll need a Discord API token, create one on [Discord Developer Portal](https://discord.com/developers/applications)
+
+After that you'll need a Random.org API token, get one on [api.random.org](https://api.random.org/dashboard)
+
+Now replace the values on `.env-example` and rename the file for `.env`
+
+Install the requirements 
+
+```pip install -r requirements.txt```
+
+Now just invite the bot to your server and enjoy
+
+# Notes
+
+- The free version of Random.org API allows just 1,000 requests/day and 250,000 bits/day. **DO NOT USE THIS BOT FOR COMMERCIAL PURPOSES**
+
+- Your discord bot will need **Send Messages** and **Use Slash Commands** permissions.
+
+- **DO NOT SHARE YOUR API TOKENS WITH ANYWONE**
