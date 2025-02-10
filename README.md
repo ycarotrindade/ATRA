@@ -17,9 +17,9 @@ After that you'll need a Random.org API token, get one on [api.random.org](https
 Now replace the values on `.env-example` and rename the file for `.env`
 
 Install the requirements 
-
-```pip install -r requirements.txt```
-
+```
+pip install -r requirements.txt
+```
 Now just invite the bot to your server and enjoy
 
 # Notes
