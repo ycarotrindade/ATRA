@@ -17,10 +17,16 @@ After that you'll need a Random.org API token, get one on [api.random.org](https
 Now replace the values on `.env-example` and rename the file for `.env`
 
 Install the requirements 
-
-```pip install -r requirements.txt```
-
+```
+pip install -r requirements.txt
+```
 Now just invite the bot to your server and enjoy
+
+# Usage
+
+- 1d20 = 1 is the amount of dice that will be rolled and 20 the max
+- 3#1d20 = this will roll 1d20 3 times
+- 1d20 + 5 = this will roll 1d20 and add 5 to the final result
 
 # Notes
 
