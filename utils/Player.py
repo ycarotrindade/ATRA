@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+import numpy as np
 
 class Player:
     '''The RPG player, used only for statistics
@@ -40,7 +40,7 @@ class Player:
     
     def __init__(self,name:str):
         self.name = name
-        self.dices:defaultdict[int,list[int]] = defaultdict(list)
+        self.dices:defaultdict[int,np.typing.ArrayLike] = defaultdict(list)
         
     def __str__(self):
         return self.name
@@ -58,7 +58,7 @@ class Player:
                 The values that the player acquired
         '''
         
-        self.dices[dice].extend(values)
+        self.dices[dice] = np.concatenate((self.dices[dice],np.array(values)))
         return self
     
     def n_critics(self):
@@ -68,7 +68,7 @@ class Player:
             The number of critics'''
         critics = 0
         for key, value in self.dices.items():
-            critics += value.count(key)
+            critics += np.count_nonzero(value == key)
         return critics
     
     def n_critical_failures(self):
@@ -78,7 +78,7 @@ class Player:
         '''
         failures = 0
         for value in self.dices.values():
-            failures += value.count(1)
+            failures += np.count_nonzero(value == 1)
         return failures
     
     def total_dices_rolled(self):

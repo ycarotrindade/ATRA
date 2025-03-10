@@ -114,11 +114,24 @@ def generate_stats(players:dict[str,Player]):
     '''
     
     
+    functions:dict[str,function] = {
+        'mvp':mvp_function,
+        'svp':svp_function,
+        'jinxed':jinxed_function,
+        'gambler':gambler_function,
+        'abstinent':abstinent_function
+    }
+    
     titles:dict[str,dict[str,str|int]] = {
         'mvp':{
             'player':'Anywone :(',
             'value': 0,
             'desc':'more critics'
+        },
+        'svp':{
+          'player':'Anywone :(',
+          'value':0,
+          'desc':'second more critics'
         },
         'jinxed':{
             'player':'Anywone :(',
@@ -137,36 +150,65 @@ def generate_stats(players:dict[str,Player]):
         }
     }
     
-    for player in players.values():
-        critics = player.n_critics()
-        if critics > titles['mvp']['value']:
-            titles['mvp']['value'] = critics
-            titles['mvp']['player'] = player.name
-        elif critics == titles['mvp']['value'] and titles['mvp']['value'] > 0:
-            titles['mvp']['player'] += f', {player.name}'
-            
-        failures = player.n_critical_failures()
-        if failures > titles['jinxed']['value']:
-            titles['jinxed']['value'] = failures
-            titles['jinxed']['player'] = player.name
-        elif failures == titles['jinxed']['value'] and titles['jinxed']['value'] > 0:
-            titles['mvp']['player'] = f', {player.name}'
-        
-        dices = player.total_dices_rolled()
-        if dices > titles['gambler']['value']:
-            titles['gambler']['player'] = player.name
-            titles['gambler']['value'] = dices
-        
-        if dices < titles['abstinent']['value'] or titles['abstinent']['value'] == 0:
-            titles['abstinent']['player'] = player.name
-            titles['abstinent']['value'] = dices
-        
-    
+    for title in titles.keys():
+        titles[title]['player'], titles[title]['value'] = functions[title](players)
+
+
+
     return_value = ''
     for title, values in titles.items():
         return_value += f'# {title.upper()}: {values['desc']}\n`{values['player']}` ({values['value']})\n\n'
     return return_value
-        
+
+def svp_function(players:dict[str,Player]):
+    critics = []
+    critics = [(player.n_critics()) for player in players.values()]
+    unique_vals = np.unique(critics)
+    
+    second_value = 0
+    if len(unique_vals) > 1:
+        second_value = unique_vals[len(unique_vals)-2]
+        if second_value > 0:
+            indices = np.where(critics == second_value)[0]
+            names = ', '.join(np.array(list(players.keys()))[indices])
+        else:
+            names = 'Anywone :('
+    else:
+        names = 'Anywone :('
+    
+    return names, second_value
+
+def abstinent_function(players:dict[str,Player]):
+    total = np.array([player.total_dices_rolled() for player in players.values()])
+    max_value = np.min(total)
+    indices = np.where(total == max_value)[0]
+    names = ', '.join(np.array(list(players.keys()))[indices])
+    return names, max_value
+
+def gambler_function(players:dict[str,Player]):
+    total = np.array([player.total_dices_rolled() for player in players.values()])
+    max_value = np.max(total)
+    indices = np.where(total == max_value)[0]
+    names = ', '.join(np.array(list(players.keys()))[indices])
+    return names, max_value
+
+def jinxed_function(players:dict[str,Player]):
+    critical_failures = []
+    critical_failures = np.array([player.n_critical_failures() for player in players.values()])
+    max_value = np.max(critical_failures)
+    indices = np.where(critical_failures == max_value)[0]
+    names = ', '.join(np.array(list(players.keys()))[indices])
+    return names, max_value
+    
+
+def mvp_function(players:dict[str,Player]):
+    critics = []
+    critics = [player.n_critics() for player in players.values()]
+    max_value = np.max(critics)
+    indices = np.where(critics == max_value)[0]
+    names = ', '.join(np.array(list(players.keys()))[indices])
+    return names, max_value
+
 def error_handler(logger:logging.Logger,traceback_string:str):
     '''Formats traceback string and log
     
