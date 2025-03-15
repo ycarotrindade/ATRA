@@ -1,0 +1,8 @@
+.venv/
+logs/
+.env
+.git
+.gitignore
+test.py
+**/__pycache__/
+.vscode
