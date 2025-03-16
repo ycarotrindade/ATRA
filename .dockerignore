@@ -1,6 +1,7 @@
 .venv/
 logs/
 .env
+.env_example
 .git
 .gitignore
 test.py
