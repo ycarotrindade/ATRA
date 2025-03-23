@@ -4,6 +4,7 @@ import os
 import numpy as np
 import logging
 from . import Player
+from services import *
 
 def split_args(syntax:str):
     '''Split dice syntax into a dict
@@ -56,7 +57,7 @@ def format_numbers(matrix:list,max:int):
     string_return +=']'
     return string_return
 
-def generate_random_numbers(quantity=1,times=1,max=20) -> list:
+def generate_random_numbers(alg:str,quantity=1,times=1,max=20) -> list:
     '''Generate random numbers, if ISTEST env variable is True, this function will use python built-in function else will use RANDOM.ORG API
     
     # Args
@@ -73,34 +74,20 @@ def generate_random_numbers(quantity=1,times=1,max=20) -> list:
         A matrix with the random values
     
     '''
-    if not eval(os.getenv('ISTEST')):
-        values = quantity * times
-        url = 'https://api.random.org/json-rpc/4/invoke'
-        body = {
-            "jsonrpc": "2.0",
-            "method": "generateIntegers",
-            "params": {
-                "apiKey": os.getenv('RANDOM_ORG_API_KEY'),
-                "n": values,  
-                "min": 1,  
-                "max": max,
-                "replacement": True  
-            },
-            "id": 42
-        }
-        response = requests.post(url,json=body)
-        json_dict:dict = response.json()
-        if 'error' in json_dict.keys():
-            raise Exception(f'{json_dict['error']['code']} - {json_dict['error']['message']}')
-        else:
-            matrix = response.json()['result']['random']['data']
-            matrix = np.reshape(matrix,(times,quantity)).tolist()
-            return matrix
-    else:
-        values = []
-        for _ in range(times):
-            values.append([random.randint(1,max) for x in range(quantity)])
-        return values
+    try:
+        match alg:
+            case 'python':
+                values = []
+                for _ in range(times):
+                    values.append([random.randint(1,max) for _ in range(quantity)])
+                return values
+            case 'random.org':
+                return random_org_api.request_random_integers(quantity=quantity,times=times,max=max)
+            case _:
+                raise Exception('Alg not found')
+    except Exception as e:
+        raise e
+        
 
 def generate_stats(players:dict[str,Player]):
     '''Generate the stats texto for discord\n

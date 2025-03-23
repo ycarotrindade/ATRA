@@ -9,6 +9,7 @@ from utils import *
 
 dotenv.load_dotenv(override=True)
 
+RANDOM_ALG:str
 
 LOG_BASE_PATH = os.getenv('LOG_BASE_PATH')
 os.makedirs(LOG_BASE_PATH,exist_ok=True)
@@ -26,9 +27,12 @@ tree = discord.app_commands.CommandTree(bot)
 
 @bot.event
 async def on_ready():
+    global RANDOM_ALG
     logging.debug('Syncing commands')
     await tree.sync()
     logging.info(f'Bot connected {bot.user}')   
+    RANDOM_ALG = 'python'
+    logging.info(f'RANDOM_ALG = {RANDOM_ALG}')
 
 @tree.command(name='roll',description='Roll a dice')
 @app_commands.describe(
@@ -47,7 +51,7 @@ async def roll(interaction:discord.Interaction,dice:str,phrase:str|None):
         if 'plus' in arguments:
             plus = arguments['plus']
             arguments.pop('plus')
-        
+        arguments['alg'] = RANDOM_ALG
         
         values = generate_random_numbers(**arguments)
         
@@ -103,5 +107,20 @@ async def stop_recorder(interaction:discord.Interaction):
         response = 'Sorry, an error ocurred, please try again later'
     finally:
         await interaction.response.send_message(response)
+
+@tree.command(name='change_alg',description='Changes the random algorithm used by ATRA to generate values')
+@app_commands.describe(
+    alg = 'The algorithm used by ATRA'
+)
+@app_commands.choices(
+    alg = [
+        app_commands.Choice(name='Python',value='python'),
+        app_commands.Choice(name='RANDOM.ORG',value='random.org')
+    ]
+)
+async def change_alg(interaction:discord.Interaction,alg:app_commands.Choice[str]):
+    global RANDOM_ALG
+    RANDOM_ALG = alg.value
+    await interaction.response.send_message(f'Random Algorithm changed to {RANDOM_ALG}')
 
 bot.run(os.getenv('DISCORD_API_KEY'))
