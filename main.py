@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from discord.ext import commands
 import os
 from datetime import datetime
 import logging
@@ -18,12 +19,52 @@ LOG_FILE = os.path.join(LOG_BASE_PATH,f'log_{datetime.strftime(datetime.now(),'%
 logging.basicConfig(level=logging.DEBUG,encoding='utf-8',datefmt='(%H:%M:%S)',format='%(asctime)s - %(levelname)s - %(message)s',handlers=[logging.FileHandler(LOG_FILE),logging.StreamHandler()])
 
 is_recording = False
+use_channel_messages = True
 user_recorder:discord.Member | discord.User = None
 player_dict:dict[str,Player] = {}
 
-itents = discord.Intents.default()
-bot = discord.Client(intents=itents)
+intents = discord.Intents.default()
+intents.message_content = True
+bot = discord.Client(intents=intents)
 tree = discord.app_commands.CommandTree(bot)
+
+@bot.event
+async def on_message(message:discord.Message):
+    global player_dict
+    if message.author.bot:
+        return
+    try:
+        return_value = ''
+        phrase = ''
+        plus = 0
+        arguments = split_args(message.content)
+        
+        if 'plus' in arguments:
+            plus = arguments['plus']
+            arguments.pop('plus')
+            
+        arguments['alg'] = RANDOM_ALG
+        
+        values = generate_random_numbers(**arguments)
+        
+        logging.debug(f'{message.author.display_name} used "roll"')
+
+        for matrix in values:
+            formated_values = format_numbers(matrix,arguments['max'])
+            string_part = f'`{sum(matrix)+plus}` ⟵ {formated_values}'
+            string_part += f' + {plus}' if plus > 0 else ''
+            return_value += f'{string_part}\n'
+        
+        if is_recording:
+            player_name = message.author.display_name
+            if player_name not in player_dict:
+                player_dict[player_name] = Player(player_name)
+            values = np.array(values).reshape((1,-1)).flatten().tolist()
+            player_dict[player_name].add_or_update_dices(arguments['max'],values)
+        
+        await message.reply(f'{message.author.mention}{phrase}\n{return_value}')
+    except:
+        None
 
 @bot.event
 async def on_ready():
@@ -51,6 +92,7 @@ async def roll(interaction:discord.Interaction,dice:str,phrase:str|None):
         if 'plus' in arguments:
             plus = arguments['plus']
             arguments.pop('plus')
+            
         arguments['alg'] = RANDOM_ALG
         
         values = generate_random_numbers(**arguments)

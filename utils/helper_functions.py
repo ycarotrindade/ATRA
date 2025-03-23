@@ -5,6 +5,8 @@ import numpy as np
 import logging
 from . import Player
 from services import *
+import re
+
 
 def split_args(syntax:str):
     '''Split dice syntax into a dict
@@ -19,17 +21,12 @@ def split_args(syntax:str):
         arguments = {}
         
         syntax = syntax.replace(' ','')
+        regex = r'^(?P<times>\d+)?#?(?P<quantity>\d+)d(?P<max>\d+)\+?(?P<plus>\d+)?$'
+        arguments = re.match(regex,syntax).groupdict()
+        arguments = {key:int(value) for key, value in arguments.items() if value is not None}
+        if arguments == {}:
+            raise Exception('No matches')
         
-        if '+' in syntax:
-            arguments['plus'] = int(syntax.split('+',maxsplit=1)[1])
-            syntax = syntax.replace("+" + syntax.split('+',maxsplit=1)[1],'',1)
-            
-        if '#' in syntax:
-            arguments['times'] = int(syntax.split('#',maxsplit=1)[0])
-            syntax = syntax.replace(syntax.split('#',maxsplit=1)[0] + "#",'',1)
-        
-        arguments['quantity'] = int(syntax[:syntax.find('d')])
-        arguments['max'] = int(syntax[syntax.find('d') + 1:])
     except Exception as e:
         raise e
     finally:
