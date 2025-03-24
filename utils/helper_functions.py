@@ -21,9 +21,18 @@ def split_args(syntax:str):
         arguments = {}
         
         syntax = syntax.replace(' ','')
-        regex = r'^(?P<times>\d+)?#?(?P<quantity>\d+)d(?P<max>\d+)\+?(?P<plus>\d+)?$'
+        regex = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?$'
         arguments = re.match(regex,syntax).groupdict()
-        arguments = {key:int(value) for key, value in arguments.items() if value is not None}
+        arguments = {key:value for key, value in arguments.items() if value is not None}
+        for key, value in arguments.items():
+            match key:
+                case 'times':
+                    arguments[key] = value.removesuffix('#')
+                case 'quantity':
+                    arguments[key] = value.removesuffix('d')
+                case 'plus':
+                    arguments[key] = value.removeprefix('+')
+        arguments = {key:int(value) for key,value in arguments.items()}
         if arguments == {}:
             raise Exception('No matches')
         
