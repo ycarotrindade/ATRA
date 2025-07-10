@@ -20,7 +20,38 @@ Install the requirements
 ```
 pip install -r requirements.txt
 ```
+
+# Running with Docker
+
+If you use Docker, just modify the `.env-example` file, rename it to `.env`, and then run one of the following commands:
+
+1. Using `make` (recommended):
+
+   * If you have [make](https://en.wikipedia.org/wiki/Make) installed, simply run:
+
+     ```
+     make up
+     ```
+
+   * Or just:
+
+     ```
+     make
+     ```
+
+    This will build and run the project using `docker-compose`.
+
+2. Without `make`:
+
+   * Run this command manually:
+
+     ```
+     docker-compose up --build
+     ```
+
 Now just invite the bot to your server and enjoy
+
+
 
 # Usage
 
