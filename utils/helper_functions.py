@@ -1,11 +1,77 @@
-import requests
 import random
-import os
 import numpy as np
 import logging
 from . import Player
 from services import *
 import re
+import discord
+from typing import Any, Tuple
+
+def check_if_atra_syntax(message:str) -> bool:
+    '''Check if the discord message is in the ATRA syntax
+    # Args
+        message: `str`
+            Message from discord
+    
+    # Return
+        A bool var if the message is in ATRA format
+    '''
+    atra_regex_syntax = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?\s?(?P<phrase>.+)?$'
+    results = re.match(atra_regex_syntax, message.replace(' ', ''))
+    if results is None:
+        return False
+    else:
+        return True
+    
+
+def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Interaction) -> Tuple[str, dict[str, Any]]:
+    '''Apply all the roll dice logic 
+    # Args
+        content: `str`
+            Message from discord
+        
+        alg: `str`
+            The random algorithm used to generate values
+        
+        ctx: `discord.Message | discord.Interaction`
+            The discord object to reply.
+    
+    # Return
+        A bool var if the message is in ATRA format
+    '''
+    if check_if_atra_syntax(content):
+        return_value = ''
+        arguments = split_args(content)
+        plus = 0
+        if 'plus' in arguments:
+            plus = int(arguments['plus'])
+            arguments.pop('plus')
+        
+        phrase = ''
+        if 'phrase' in arguments:
+            phrase = '\''+ arguments['phrase'] + '\','
+            arguments.pop('phrase')
+        
+        arguments['alg'] = alg
+        values = generate_random_numbers(**arguments)
+        
+        if isinstance(ctx, discord.Message):
+            logging.debug(ctx.author.display_name)
+        elif isinstance(ctx, discord.Interaction):
+            logging.debug(ctx.user.display_name)
+        
+        for matrix in values:
+            formated_values = format_numbers(matrix,arguments['max'])
+            string_part = phrase + f'`{sum(matrix)+plus}` ⟵ {formated_values}'
+            string_part += f' + {plus}' if plus > 0 else ''
+            return_value += f'{string_part}\n'
+    
+        if isinstance(ctx, discord.Message):
+            return_value = f'{ctx.author.mention}\n{return_value}'
+        elif isinstance(ctx, discord.Interaction):
+            return_value = f'{ctx.user.mention}\n{return_value}'
+    
+    return return_value, arguments
 
 
 def split_args(syntax:str):
@@ -21,7 +87,7 @@ def split_args(syntax:str):
         arguments = {}
         
         syntax = syntax.replace(' ','')
-        regex = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?$'
+        regex = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?\s?(?P<phrase>[^\s]+)?$'
         arguments = re.match(regex,syntax).groupdict()
         arguments = {key:value for key, value in arguments.items() if value is not None}
         for key, value in arguments.items():
@@ -81,6 +147,9 @@ def generate_random_numbers(alg:str,quantity=1,times=1,max=20) -> list:
     
     '''
     try:
+        quantity = int(quantity)
+        times = int(times)
+        max = int(max)
         match alg:
             case 'python':
                 values = []

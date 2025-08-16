@@ -1,6 +1,5 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
 import os
 from datetime import datetime
 import logging
@@ -34,26 +33,7 @@ async def on_message(message:discord.Message):
     if message.author.bot:
         return
     try:
-        return_value = ''
-        phrase = ''
-        plus = 0
-        arguments = split_args(message.content)
-        
-        if 'plus' in arguments:
-            plus = arguments['plus']
-            arguments.pop('plus')
-            
-        arguments['alg'] = RANDOM_ALG
-        
-        values = generate_random_numbers(**arguments)
-        
-        logging.debug(f'{message.author.display_name} used "roll"')
-
-        for matrix in values:
-            formated_values = format_numbers(matrix,arguments['max'])
-            string_part = f'`{sum(matrix)+plus}` ⟵ {formated_values}'
-            string_part += f' + {plus}' if plus > 0 else ''
-            return_value += f'{string_part}\n'
+        return_value, arguments = apply_dice_logic(message.content, RANDOM_ALG, message)
         
         if is_recording:
             player_name = message.author.display_name
@@ -62,9 +42,9 @@ async def on_message(message:discord.Message):
             values = np.array(values).reshape((1,-1)).flatten().tolist()
             player_dict[player_name].add_or_update_dices(arguments['max'],values)
         
-        await message.reply(f'{message.author.mention}{phrase}\n{return_value}')
+        await message.reply(return_value)
     except:
-        None
+        error_handler(logging.getLogger(),traceback.format_exc())
 
 @bot.event
 async def on_ready():
@@ -77,31 +57,13 @@ async def on_ready():
 
 @tree.command(name='roll',description='Roll a dice')
 @app_commands.describe(
-    dice = "The dice syntax",
-    phrase = "Description of the dice"
+    dice = "The dice syntax"
 )
-async def roll(interaction:discord.Interaction,dice:str,phrase:str|None):
+async def roll(interaction:discord.Interaction,dice:str):
     global player_dict
     try:
-        return_value = ''
-        phrase = '' if phrase == None else f':{phrase}'
-        plus = 0
-        logging.debug(f'{interaction.user} used "roll"')
-        arguments = split_args(dice)
         
-        if 'plus' in arguments:
-            plus = arguments['plus']
-            arguments.pop('plus')
-            
-        arguments['alg'] = RANDOM_ALG
-        
-        values = generate_random_numbers(**arguments)
-        
-        for matrix in values:
-            formated_values = format_numbers(matrix,arguments['max'])
-            string_part = f'`{sum(matrix)+plus}` ⟵ {formated_values}'
-            string_part += f' + {plus}' if plus > 0 else ''
-            return_value += f'{string_part}\n'
+        return_value, arguments = apply_dice_logic(dice, RANDOM_ALG, interaction)
         
         if is_recording:
             player_name = interaction.user.display_name
@@ -115,7 +77,7 @@ async def roll(interaction:discord.Interaction,dice:str,phrase:str|None):
         error_handler(logging.getLogger(),traceback.format_exc())
         return_value = 'Sorry, an error ocurred, please try again later'
     finally:
-        await interaction.response.send_message(f'{interaction.user.mention}{phrase}\n{return_value}')
+        await interaction.response.send_message(return_value)
     
     
 
