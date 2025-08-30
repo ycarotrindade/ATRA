@@ -37,7 +37,7 @@ def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Intera
             The discord object to reply.
     
     # Return
-        A bool var if the message is in ATRA format
+        The string return_value to display, the arguments used and the dice values
     '''
     if check_if_atra_syntax(content):
         return_value = ''
@@ -71,7 +71,7 @@ def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Intera
         elif isinstance(ctx, discord.Interaction):
             return_value = f'{ctx.user.mention}\n{return_value}'
     
-    return return_value, arguments
+    return return_value, arguments, values
 
 
 def split_args(syntax:str):

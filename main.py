@@ -33,7 +33,7 @@ async def on_message(message:discord.Message):
     if message.author.bot:
         return
     try:
-        return_value, arguments = apply_dice_logic(message.content, RANDOM_ALG, message)
+        return_value, arguments, values = apply_dice_logic(message.content, RANDOM_ALG, message)
         
         if is_recording:
             player_name = message.author.display_name
@@ -63,7 +63,7 @@ async def roll(interaction:discord.Interaction,dice:str):
     global player_dict
     try:
         
-        return_value, arguments = apply_dice_logic(dice, RANDOM_ALG, interaction)
+        return_value, arguments, values = apply_dice_logic(dice, RANDOM_ALG, interaction)
         
         if is_recording:
             player_name = interaction.user.display_name
