@@ -39,38 +39,38 @@ def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Intera
     # Return
         The string return_value to display, the arguments used and the dice values
     '''
-    if check_if_atra_syntax(content):
-        return_value = ''
-        arguments = split_args(content)
-        plus = 0
-        if 'plus' in arguments:
-            plus = int(arguments['plus'])
-            arguments.pop('plus')
-        
-        phrase = ''
-        if 'phrase' in arguments:
-            phrase = '\''+ arguments['phrase'] + '\','
-            arguments.pop('phrase')
-        
-        arguments['alg'] = alg
-        values = generate_random_numbers(**arguments)
-        
-        if isinstance(ctx, discord.Message):
-            logging.debug(ctx.author.display_name)
-        elif isinstance(ctx, discord.Interaction):
-            logging.debug(ctx.user.display_name)
-        
-        for matrix in values:
-            formated_values = format_numbers(matrix,arguments['max'])
-            string_part = phrase + f'`{sum(matrix)+plus}` ⟵ {formated_values}'
-            string_part += f' + {plus}' if plus > 0 else ''
-            return_value += f'{string_part}\n'
     
-        if isinstance(ctx, discord.Message):
-            return_value = f'{ctx.author.mention}\n{return_value}'
-        elif isinstance(ctx, discord.Interaction):
-            return_value = f'{ctx.user.mention}\n{return_value}'
+    return_value = ''
+    arguments = split_args(content)
+    plus = 0
+    if 'plus' in arguments:
+        plus = int(arguments['plus'])
+        arguments.pop('plus')
     
+    phrase = ''
+    if 'phrase' in arguments:
+        phrase = '\''+ arguments['phrase'] + '\','
+        arguments.pop('phrase')
+    
+    arguments['alg'] = alg
+    values = generate_random_numbers(**arguments)
+    
+    if isinstance(ctx, discord.Message):
+        logging.debug(ctx.author.display_name)
+    elif isinstance(ctx, discord.Interaction):
+        logging.debug(ctx.user.display_name)
+    
+    for matrix in values:
+        formated_values = format_numbers(matrix,arguments['max'])
+        string_part = phrase + f'`{sum(matrix)+plus}` ⟵ {formated_values}'
+        string_part += f' + {plus}' if plus > 0 else ''
+        return_value += f'{string_part}\n'
+
+    if isinstance(ctx, discord.Message):
+        return_value = f'{ctx.author.mention}\n{return_value}'
+    elif isinstance(ctx, discord.Interaction):
+        return_value = f'{ctx.user.mention}\n{return_value}'
+
     return return_value, arguments, values
 
 

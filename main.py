@@ -30,7 +30,7 @@ tree = discord.app_commands.CommandTree(bot)
 @bot.event
 async def on_message(message:discord.Message):
     global player_dict
-    if message.author.bot:
+    if message.author.bot or not check_if_atra_syntax(message.content):
         return
     try:
         return_value, arguments, values = apply_dice_logic(message.content, RANDOM_ALG, message)
@@ -61,6 +61,8 @@ async def on_ready():
 )
 async def roll(interaction:discord.Interaction,dice:str):
     global player_dict
+    if not check_if_atra_syntax(dice):
+        return
     try:
         
         return_value, arguments, values = apply_dice_logic(dice, RANDOM_ALG, interaction)
