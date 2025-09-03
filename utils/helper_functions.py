@@ -56,9 +56,9 @@ def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Intera
     values = generate_random_numbers(**arguments)
     
     if isinstance(ctx, discord.Message):
-        logging.debug(ctx.author.display_name)
+        logging.debug(f'{ctx.author.display_name} rolled a dice')
     elif isinstance(ctx, discord.Interaction):
-        logging.debug(ctx.user.display_name)
+        logging.debug(f'{ctx.user.display_name} rolled a dice')
     
     for matrix in values:
         formated_values = format_numbers(matrix,arguments['max'])
