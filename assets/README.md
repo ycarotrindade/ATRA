@@ -1,0 +1,1 @@
+These are just the images I used as the bot's banner and icon. Feel free to use them if you like.
