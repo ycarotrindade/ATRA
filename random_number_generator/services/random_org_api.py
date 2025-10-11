@@ -2,7 +2,7 @@ import requests
 import os
 import numpy as np
 
-def request_random_integers(quantity=1,times=1,max=20) -> list:
+def request_random_integers(quantity=1,times=1,maximum=20) -> list:
     values = quantity * times
     url = 'https://api.random.org/json-rpc/4/invoke'
     body = {
@@ -12,7 +12,7 @@ def request_random_integers(quantity=1,times=1,max=20) -> list:
             "apiKey": os.getenv('RANDOM_ORG_API_KEY'),
             "n": values,  
             "min": 1,  
-            "max": max,
+            "max": maximum,
             "replacement": True  
         },
         "id": 42

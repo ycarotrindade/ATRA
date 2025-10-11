@@ -1,30 +1,12 @@
-import random
 import numpy as np
 import logging
 from . import Player
-from services import *
 import re
 import discord
-from typing import Any, Tuple
+from typing import Any, Tuple, Iterator
+from random_number_generator import RandomNumberGenerator
 
-def check_if_atra_syntax(message:str) -> bool:
-    '''Check if the discord message is in the ATRA syntax
-    # Args
-        message: `str`
-            Message from discord
-    
-    # Return
-        A bool var if the message is in ATRA format
-    '''
-    atra_regex_syntax = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?\s?(?P<phrase>.+)?$'
-    results = re.match(atra_regex_syntax, message.replace(' ', ''))
-    if results is None:
-        return False
-    else:
-        return True
-    
-
-def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Interaction) -> Tuple[str, dict[str, Any]]:
+def apply_dice_logic(content: str, generator: RandomNumberGenerator, ctx:discord.Message | discord.Interaction) -> Tuple[str, dict[str, Any]]:
     '''Apply all the roll dice logic 
     # Args
         content: `str`
@@ -41,127 +23,62 @@ def apply_dice_logic(content: str, alg:str, ctx:discord.Message | discord.Intera
     '''
     
     return_value = ''
-    arguments = split_args(content)
-    plus = 0
-    if 'plus' in arguments:
-        plus = int(arguments['plus'])
-        arguments.pop('plus')
-    
-    phrase = ''
-    if 'phrase' in arguments:
-        phrase = '\''+ arguments['phrase'] + '\','
-        arguments.pop('phrase')
-    
-    arguments['alg'] = alg
-    values = generate_random_numbers(**arguments)
     
     if isinstance(ctx, discord.Message):
         logging.debug(f'{ctx.author.display_name} rolled a dice')
     elif isinstance(ctx, discord.Interaction):
         logging.debug(f'{ctx.user.display_name} rolled a dice')
     
-    for matrix in values:
-        formated_values = format_numbers(matrix,arguments['max'])
-        string_part = phrase + f'`{sum(matrix)+plus}` ⟵ {formated_values}'
-        string_part += f' + {plus}' if plus > 0 else ''
-        return_value += f'{string_part}\n'
-
+    values, arguments = generator.generate_random_numbers(content)
+    
+    return_value = format_numbers(values, arguments)
+        
     if isinstance(ctx, discord.Message):
         return_value = f'{ctx.author.mention}\n{return_value}'
     elif isinstance(ctx, discord.Interaction):
         return_value = f'{ctx.user.mention}\n{return_value}'
 
     return return_value, arguments, values
-
-
-def split_args(syntax:str):
-    '''Split dice syntax into a dict
-    # Args
-        syntax: `str`
-            The original dice syntax
-    
-    # Return
-        A `dict` with arguments as keys
-    '''
-    try:
-        arguments = {}
-        
-        syntax = syntax.replace(' ','')
-        regex = r'^(?P<times>\d+#)?(?P<quantity>\d+d)(?P<max>\d+)?(?P<plus>\+\d+)?\s?(?P<phrase>[^\s]+)?$'
-        arguments = re.match(regex,syntax).groupdict()
-        arguments = {key:value for key, value in arguments.items() if value is not None}
-        for key, value in arguments.items():
-            match key:
-                case 'times':
-                    arguments[key] = value.removesuffix('#')
-                case 'quantity':
-                    arguments[key] = value.removesuffix('d')
-                case 'plus':
-                    arguments[key] = value.removeprefix('+')
-        arguments = {key:int(value) for key,value in arguments.items()}
-        if arguments == {}:
-            raise Exception('No matches')
-        
-    except Exception as e:
-        raise e
-    finally:
-        return arguments
     
 
-def format_numbers(matrix:list,max:int):
+def format_numbers(matrix:list,arguments:list):
     '''Format numbers to send on discord
     
     # Args
         matrix: `list`
             The original values
         
-        max: `int`
-            The max value used to outline the text
+        arguments: `list`
+            The arguments used in dyce syntax
     
     # Return
         The string formated
     
     '''
-    string_return = '['
-    for value in matrix:
-        string_return += f'**{value}**, ' if value == max else f'{value}, '
-    string_return = string_return.removesuffix(', ')
-    string_return +=']'
-    return string_return
-
-def generate_random_numbers(alg:str,quantity=1,times=1,max=20) -> list:
-    '''Generate random numbers, if ISTEST env variable is True, this function will use python built-in function else will use RANDOM.ORG API
+    return_string = ''
+    matrix_formated = list(zip(*matrix))
+    for u_matrix in matrix_formated:
+        
+        string_part = ''
+        for index, values in enumerate(u_matrix):
+            if not isinstance(arguments[index], int):
+                formated_values = '['
+                for value in values:
+                    if value == 1 or value == arguments[index]['maximum']:
+                        formated_values += f"**{value}**, "
+                    else:
+                        formated_values += f"{value}, "
+                formated_values = formated_values.removesuffix(", ")
+                formated_values += ']'
+                string_part += f"{formated_values} {arguments[index]['quantity']}d{arguments[index]['maximum']} "
+                string_part += f"\'{arguments[index]['phrase']}\' " if arguments[index]['phrase'] is not None else ''
+                string_part += "+ "
+            else:
+                string_part += f"{values} + "
+        sum_matrix = sum([sum(x) for x in u_matrix])
+        return_string += f"`{sum_matrix}` <-- {string_part.removesuffix(" + ")}\n"
+    return return_string
     
-    # Args
-        quantity: `int`
-            The number of times the dice will be used uniquely
-            
-        max: `int`
-            The max value for the dice
-            
-        dices: `int`
-            The number of times the dice will be used in a result
-    
-    # Return
-        A matrix with the random values
-    
-    '''
-    try:
-        quantity = int(quantity)
-        times = int(times)
-        max = int(max)
-        match alg:
-            case 'python':
-                values = []
-                for _ in range(times):
-                    values.append([random.randint(1,max) for _ in range(quantity)])
-                return values
-            case 'random.org':
-                return random_org_api.request_random_integers(quantity=quantity,times=times,max=max)
-            case _:
-                raise Exception('Alg not found')
-    except Exception as e:
-        raise e
         
 
 def generate_stats(players:dict[str,Player]):
