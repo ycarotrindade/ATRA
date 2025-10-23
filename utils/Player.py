@@ -48,19 +48,17 @@ class Player:
     def __repr__(self):
         return f"Player('{self.name}')"
     
-    def add_or_update_dices(self,arguments:list,values:list[int]):
+    def add_or_update_dices(self,dice:int,values:list[int]):
         '''Update the dices attribute, returns the object
         # Params
             dice: `int`
-                The arguments used to generate the dyce
+                The dice type which the player rolled, it's used as key
             
             values:`list[int]`
                 The values that the player acquired
         '''
-        for value, argument in zip(values, arguments):
-            if not isinstance(argument, int):
-                flatten_values = np.array(value).flatten()
-                self.dices[argument['maximum']] = np.concatenate((self.dices[argument['maximum']],flatten_values))
+        
+        self.dices[dice] = np.concatenate((self.dices[dice],np.array(values)))
         return self
     
     def n_critics(self):

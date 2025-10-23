@@ -6,11 +6,10 @@ import logging
 import dotenv
 import traceback
 from utils import *
-from random_number_generator import RandomNumberGenerator
 
 dotenv.load_dotenv(override=True)
 
-rn = RandomNumberGenerator()
+RANDOM_ALG:str
 
 LOG_BASE_PATH = os.getenv('LOG_BASE_PATH')
 os.makedirs(LOG_BASE_PATH,exist_ok=True)
@@ -31,23 +30,21 @@ tree = discord.app_commands.CommandTree(bot)
 @bot.event
 async def on_message(message:discord.Message):
     global player_dict
-    if message.author.bot:
+    if message.author.bot or not check_if_atra_syntax(message.content):
         return
     try:
-        return_value, arguments, values = apply_dice_logic(message.content, rn, message)
+        return_value, arguments, values = apply_dice_logic(message.content, RANDOM_ALG, message)
         
         if is_recording:
             player_name = message.author.display_name
             if player_name not in player_dict:
                 player_dict[player_name] = Player(player_name)
-            player_dict[player_name].add_or_update_dices(arguments,values)
+            values = np.array(values).reshape((1,-1)).flatten().tolist()
+            player_dict[player_name].add_or_update_dices(arguments['max'],values)
         
         await message.reply(return_value)
-    except Exception as e:
-        if str(e) == 'Not possible to generate a value, incorrect syntax':
-            return
-        else:
-            error_handler(logging.getLogger(),traceback.format_exc())
+    except:
+        error_handler(logging.getLogger(),traceback.format_exc())
 
 @bot.event
 async def on_ready():
@@ -57,6 +54,34 @@ async def on_ready():
     logging.info(f'Bot connected {bot.user}')   
     RANDOM_ALG = 'python'
     logging.info(f'RANDOM_ALG = {RANDOM_ALG}')
+
+@tree.command(name='roll',description='Roll a dice')
+@app_commands.describe(
+    dice = "The dice syntax"
+)
+async def roll(interaction:discord.Interaction,dice:str):
+    global player_dict
+    if not check_if_atra_syntax(dice):
+        return
+    try:
+        
+        return_value, arguments, values = apply_dice_logic(dice, RANDOM_ALG, interaction)
+        
+        if is_recording:
+            player_name = interaction.user.display_name
+            if player_name not in player_dict:
+                player_dict[player_name] = Player(player_name)
+            values = np.array(values).reshape((1,-1)).flatten().tolist()
+            player_dict[player_name].add_or_update_dices(arguments['max'],values)
+                
+        
+    except Exception as e:
+        error_handler(logging.getLogger(),traceback.format_exc())
+        return_value = 'Sorry, an error ocurred, please try again later'
+    finally:
+        await interaction.response.send_message(return_value)
+    
+    
 
 @tree.command(name='start_recorder',description='Start recording for statistics command')
 async def start_recorder(interaction:discord.Interaction):
@@ -94,11 +119,14 @@ async def stop_recorder(interaction:discord.Interaction):
     alg = 'The algorithm used by ATRA'
 )
 @app_commands.choices(
-    alg = [app_commands.Choice(name = alg.name, value = alg.value) for alg in rn.AVAILABLE_ALGS]
+    alg = [
+        app_commands.Choice(name='Python',value='python'),
+        app_commands.Choice(name='RANDOM.ORG',value='random.org')
+    ]
 )
 async def change_alg(interaction:discord.Interaction,alg:app_commands.Choice[str]):
-    global rn
-    rn.set_alg(alg.value)
-    await interaction.response.send_message(f'Random Algorithm changed to {rn.current_alg.__str__()}')
+    global RANDOM_ALG
+    RANDOM_ALG = alg.value
+    await interaction.response.send_message(f'Random Algorithm changed to {RANDOM_ALG}')
 
 bot.run(os.getenv('DISCORD_API_KEY'))
